@@ -1,7 +1,5 @@
 "use client"
 
-import { BadgeCheck, Bell, ChevronsUpDown, CreditCard, LogOut, Sparkles } from "lucide-react"
-
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
   DropdownMenu,
@@ -18,6 +16,10 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar"
+import logout from "@/src/app/(auth)/mutations/logout"
+import { useMutation } from "@blitzjs/rpc"
+import { BadgeCheck, Bell, ChevronsUpDown, CreditCard, LogOut, Sparkles } from "lucide-react"
+import { useRouter } from "next/navigation"
 
 export function NavUser({
   user,
@@ -29,7 +31,8 @@ export function NavUser({
   }
 }) {
   const { isMobile } = useSidebar()
-
+  const router = useRouter()
+  const [logoutMutation] = useMutation(logout)
   return (
     <SidebarMenu>
       <SidebarMenuItem>
@@ -91,7 +94,12 @@ export function NavUser({
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={async () => {
+                await logoutMutation()
+                router.refresh()
+              }}
+            >
               <LogOut />
               Log out
             </DropdownMenuItem>

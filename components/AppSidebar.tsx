@@ -156,7 +156,21 @@ const data = {
   ],
 }
 
-export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+type HomeClientProps = {
+  currentUser: Awaited<ReturnType<typeof import("@/src/app/users/queries/getCurrentUser").default>>
+}
+
+interface NavUserProps {
+  user: {
+    name: string | null // null allow karo
+    email: string | null
+    avtar: string | null
+  }
+}
+
+type AppSidebarProps = HomeClientProps & React.ComponentProps<typeof Sidebar>
+
+export function AppSidebar({ currentUser, ...props }: AppSidebarProps) {
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
@@ -167,7 +181,13 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <NavProjects projects={data.projects} />
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={data.user} />
+        <NavUser
+          user={{
+            name: currentUser?.name ?? "User",
+            email: currentUser?.email ?? "user@example.com",
+            avatar: "https://github.com/shadcn.png",
+          }}
+        />
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>
