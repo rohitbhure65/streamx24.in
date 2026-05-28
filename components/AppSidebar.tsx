@@ -169,7 +169,8 @@ export function AppSidebar({ currentUser, ...props }: AppSidebarProps) {
           user={{
             name: currentUser?.name ?? "User",
             email: currentUser?.email ?? "user@example.com",
-            avatar: "https://github.com/shadcn.png",
+            avatar:
+              "https://imgs.search.brave.com/gXSAI7GgrT1-vrz9vJ6VKVGEKT-okd3zB6SlLyo5Tho/rs:fit:500:0:1:0/g:ce/aHR0cHM6Ly93d3cu/Y2l0eXBuZy5jb20v/cHVibGljL3VwbG9h/ZHMvcHJldmlldy93/aGl0ZS11c2VyLW1l/bWJlci1ndWVzdC1p/Y29uLXBuZy1pbWFn/ZS03MDE3NTE2OTUw/MzcwMDV6ZHVyZmFp/bTB5LnBuZz92PTIw/MjYwMzI1MjA",
           }}
         />
       </SidebarFooter>
