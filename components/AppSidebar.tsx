@@ -1,20 +1,12 @@
 "use client"
 
 import {
-  Bomb,
-  Crosshair,
-  Flame,
   GalleryVerticalEnd,
   LayoutDashboardIcon,
-  Shield,
-  Sword,
-  Swords,
-  Target,
   TrophyIcon,
   UserCircleIcon,
   UsersIcon,
   WalletIcon,
-  Zap,
 } from "lucide-react"
 import * as React from "react"
 
@@ -26,7 +18,7 @@ import {
   SidebarRail,
 } from "@/components/ui/sidebar"
 import { NavMain } from "./NavMain"
-import { NavProjects } from "./NavProjects"
+import { NavPublic } from "./NavPublic"
 import { NavUser } from "./NavUser"
 import { TeamSwitcher } from "./TeamSwitcher"
 
@@ -95,48 +87,64 @@ const data = {
       ],
     },
   ],
-  projects: [
+  navPublic: [
     {
-      name: "PUBG",
-      url: "/tournaments/browse/pubg",
-      icon: Crosshair,
-    },
-    {
-      name: "BGMI",
-      url: "/tournaments/browse/bgmi",
-      icon: Target,
-    },
-    {
-      name: "Free Fire",
-      url: "/tournaments/browse/free-fire",
-      icon: Flame,
-    },
-    {
-      name: "Valorant",
-      url: "/tournaments/browse/valorant",
-      icon: Sword,
-    },
-    {
-      name: "COD",
-      url: "/tournaments/browse/cod",
-      icon: Shield,
-    },
-    {
-      name: "CS2",
-      url: "/tournaments/browse/cs2",
-      icon: Bomb,
-    },
-    {
-      name: "Fortnite",
-      url: "/tournaments/browse/fortnite",
-      icon: Zap,
-    },
-    {
-      name: "Dota 2",
-      url: "/tournaments/browse/dota2",
-      icon: Swords,
+      title: "Community",
+      url: "/community",
+      icon: UsersIcon,
+      items: [
+        { title: "Leaderboard", url: "/community/leaderboard" },
+        { title: "Looking for Team ", url: "/community/lft" },
+        { title: "Looking for Players", url: "/community/lfp" },
+        { title: "My Team", url: "/community/my-team" },
+        { title: "Team Members", url: "/community/my-team/members" },
+        { title: "Team Stats", url: "/community/my-team/stats" },
+        { title: "Team Tournaments", url: "/community/my-team/tournaments" },
+      ],
     },
   ],
+  // projects: [
+  //   {
+  //     name: "PUBG",
+  //     url: "/tournaments/browse/pubg",
+  //     icon: Crosshair,
+  //   },
+  //   {
+  //     name: "BGMI",
+  //     url: "/tournaments/browse/bgmi",
+  //     icon: Target,
+  //   },
+  //   {
+  //     name: "Free Fire",
+  //     url: "/tournaments/browse/free-fire",
+  //     icon: Flame,
+  //   },
+  //   {
+  //     name: "Valorant",
+  //     url: "/tournaments/browse/valorant",
+  //     icon: Sword,
+  //   },
+  //   {
+  //     name: "COD",
+  //     url: "/tournaments/browse/cod",
+  //     icon: Shield,
+  //   },
+  //   {
+  //     name: "CS2",
+  //     url: "/tournaments/browse/cs2",
+  //     icon: Bomb,
+  //   },
+  //   {
+  //     name: "Fortnite",
+  //     url: "/tournaments/browse/fortnite",
+  //     icon: Zap,
+  //   },
+  //   {
+  //     name: "Dota 2",
+  //     url: "/tournaments/browse/dota2",
+  //     icon: Swords,
+  //   },
+  // ],
 }
 
 type HomeClientProps = {
@@ -153,7 +161,8 @@ export function AppSidebar({ currentUser, ...props }: AppSidebarProps) {
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={data.navMain} />
-        <NavProjects projects={data.projects} />
+        <NavPublic items={data.navPublic} />
+        {/* <NavProjects projects={data.projects} /> */}
       </SidebarContent>
       <SidebarFooter>
         <NavUser
