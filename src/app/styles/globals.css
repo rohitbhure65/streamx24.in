@@ -15,8 +15,7 @@
 
 /* ── Reset ── */
 * {
-  padding: 0;
-  margin: 0;
+
   box-sizing: border-box;
 }
 
@@ -94,12 +93,14 @@
 /* ── Base styles ── */
 html,
 body {
-  background-color: var(--color-bg);
+  background-color: var(bg-background);
   color: var(--color-surface);
   font-family: var(--font-poppins), system-ui, sans-serif;
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  padding: 0;
+  margin: 0;
 }
 
 /* ── Scrollbar ── */
@@ -173,9 +174,11 @@ body {
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
     @apply bg-background text-foreground;
   }
+
   html {
     @apply font-sans;
   }
