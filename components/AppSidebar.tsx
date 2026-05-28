@@ -1,6 +1,21 @@
 "use client"
 
-import { Frame, GalleryVerticalEnd, GamepadIcon } from "lucide-react"
+import {
+  Bomb,
+  Crosshair,
+  Flame,
+  GalleryVerticalEnd,
+  LayoutDashboardIcon,
+  Shield,
+  Sword,
+  Swords,
+  Target,
+  TrophyIcon,
+  UserCircleIcon,
+  UsersIcon,
+  WalletIcon,
+  Zap,
+} from "lucide-react"
 import * as React from "react"
 
 import {
@@ -26,31 +41,100 @@ const data = {
   ],
   navMain: [
     {
-      title: "Playground",
-      url: "#",
-      icon: GamepadIcon,
+      title: "Dashboard",
+      url: "/dashboard",
+      icon: LayoutDashboardIcon,
       isActive: true,
       items: [
-        {
-          title: "History",
-          url: "#",
-        },
-        {
-          title: "Starred",
-          url: "#",
-        },
-        {
-          title: "Settings",
-          url: "#",
-        },
+        { title: "Wallet Balance", url: "/dashboard/wallet-balance" },
+        { title: "Active Tournaments", url: "/dashboard/active-tournaments" },
+        { title: "Recent Matches", url: "/dashboard/recent-matches" },
+        { title: "Refer & Earn Stats", url: "/dashboard/refer-earn-stats" },
+      ],
+    },
+    {
+      title: "Tournaments",
+      url: "/tournaments",
+      icon: TrophyIcon,
+      items: [
+        { title: "Browse Tournaments", url: "/tournaments/browse" },
+        { title: "My Registrations", url: "/tournaments/my-registrations" },
+        { title: "Live Tournaments", url: "/tournaments/live" },
+        { title: "Completed Tournaments", url: "/tournaments/completed" },
+      ],
+    },
+    {
+      title: "Wallet",
+      url: "/wallet",
+      icon: WalletIcon,
+      items: [
+        { title: "Balance", url: "/wallet/balance" },
+        { title: "Add Money", url: "/wallet/add-money" },
+        { title: "Withdraw", url: "/wallet/withdraw" },
+        { title: "Transaction History", url: "/wallet/transactions" },
+      ],
+    },
+    {
+      title: "Refer & Earn",
+      url: "/refer",
+      icon: UsersIcon,
+      items: [
+        { title: "My Referral Code", url: "/refer/code" },
+        { title: "Referred Users", url: "/refer/users" },
+        { title: "Referral Earnings", url: "/refer/earnings" },
+      ],
+    },
+    {
+      title: "Profile",
+      url: "/profile",
+      icon: UserCircleIcon,
+      items: [
+        { title: "Game IDs", url: "/profile/game-ids" },
+        { title: "KYC Verification", url: "/profile/kyc" },
+        { title: "Settings", url: "/profile/settings" },
       ],
     },
   ],
   projects: [
     {
-      name: "Design Engineering",
-      url: "#",
-      icon: Frame,
+      name: "PUBG",
+      url: "/tournaments/browse/pubg",
+      icon: Crosshair,
+    },
+    {
+      name: "BGMI",
+      url: "/tournaments/browse/bgmi",
+      icon: Target,
+    },
+    {
+      name: "Free Fire",
+      url: "/tournaments/browse/free-fire",
+      icon: Flame,
+    },
+    {
+      name: "Valorant",
+      url: "/tournaments/browse/valorant",
+      icon: Sword,
+    },
+    {
+      name: "COD",
+      url: "/tournaments/browse/cod",
+      icon: Shield,
+    },
+    {
+      name: "CS2",
+      url: "/tournaments/browse/cs2",
+      icon: Bomb,
+    },
+    {
+      name: "Fortnite",
+      url: "/tournaments/browse/fortnite",
+      icon: Zap,
+    },
+    {
+      name: "Dota 2",
+      url: "/tournaments/browse/dota2",
+      icon: Swords,
     },
   ],
 }
