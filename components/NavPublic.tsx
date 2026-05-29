@@ -14,7 +14,7 @@ import {
   SidebarMenuSubItem,
 } from "@/components/ui/sidebar"
 
-export function NavMain({
+export function NavPublic({
   items,
 }: {
   items: {
@@ -30,7 +30,7 @@ export function NavMain({
 }) {
   return (
     <SidebarGroup>
-      <SidebarGroupLabel>ArenaX</SidebarGroupLabel>
+      <SidebarGroupLabel>Community</SidebarGroupLabel>
       <SidebarMenu>
         {items.map((item) => (
           <Collapsible
