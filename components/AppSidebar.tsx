@@ -2,6 +2,7 @@
 
 import {
   GalleryVerticalEnd,
+  HeadsetIcon,
   LayoutDashboardIcon,
   TrophyIcon,
   UserCircleIcon,
@@ -36,13 +37,6 @@ const data = {
       title: "Dashboard",
       url: "/dashboard",
       icon: LayoutDashboardIcon,
-      isActive: true,
-      items: [
-        { title: "Wallet Balance", url: "/dashboard/wallet-balance" },
-        { title: "Active Tournaments", url: "/dashboard/active-tournaments" },
-        { title: "Recent Matches", url: "/dashboard/recent-matches" },
-        { title: "Refer & Earn Stats", url: "/dashboard/refer-earn-stats" },
-      ],
     },
     {
       title: "Tournaments",
@@ -76,6 +70,7 @@ const data = {
         { title: "Referral Earnings", url: "/refer/earnings" },
       ],
     },
+    { title: "Support", url: "/support", icon: HeadsetIcon },
     {
       title: "Profile",
       url: "/profile",
@@ -92,6 +87,7 @@ const data = {
       title: "Community",
       url: "/community",
       icon: UsersIcon,
+      isActive: true,
       items: [
         { title: "Leaderboard", url: "/community/leaderboard" },
         { title: "Looking for Team ", url: "/community/lft" },
