@@ -1,15 +1,8 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// /**
-//  * @file        schema.prisma
-//  * @description Data model of Streamx24 project here you can easily understand
-//  *              how streamx24.in application workflow works
-//  * @author      Rohit Bhure
-//  * @created     2026-05-26
-//  * @updated     2026-05-26
-//  * @version     1.0.0
-//  */
+// ============================================================
+// StreamX24 ESPORTS TOURNAMENT PLATFORM
+// Production Prisma Schema v3.0
+// PostgreSQL + Prisma ORM
+// ============================================================
 
 datasource db {
   provider = "postgresql"
@@ -26,8 +19,28 @@ generator erd {
   puppeteerConfig = "./db/puppeteer-config.json"
 }
 
-// --------------------------------------
+// ─── USER ─────────────────────────────────────────────────
 
+/// Core user entity with geographic data for analytics
+/// Example JSON:
+/// {
+///   "id": 1,
+///   "createdAt": "2024-01-01T00:00:00Z",
+///   "updatedAt": "2024-01-01T00:00:00Z",
+///   "name": "John Doe",
+///   "mobileNumber": "+911234567890",
+///   "accountStatus": "ACTIVE",
+///   "email": "john@example.com",
+///   "hashedPassword": "hashed_pw",
+///   "role": "USER",
+///   "referCode": "ABC123",
+///   "banned": false,
+///   "country": "INDIA",
+///   "state": "Karnataka",
+///   "city": "Bangalore",
+///   "isProfileComplete": false,
+///   "...": "..."
+/// }
 model User {
   id             Int           @id @default(autoincrement())
   createdAt      DateTime      @default(now())
@@ -52,10 +65,65 @@ model User {
   // Flags
   isProfileComplete Boolean @default(false)
 
-  tokens   Token[]
-  sessions Session[]
+  tokens                 Token[]
+  sessions               Session[]
+  wallet                 Wallet?
+  gameProfiles           GameProfile[]
+  transactions           Transaction[]
+  withdrawals            Withdrawal[]
+  withdrawalsReviewed    Withdrawal[]            @relation("WithdrawalReviewer")
+  bankDetails            BankDetail[]
+  tournamentParticipants TournamentParticipant[]
+  leaderboardEntries     Leaderboard[]
+  notifications          Notification[]
+  notificationPrefs      NotificationPreference?
+  teamMemberships        TeamMember[]
+  teamsCreated           Team[]                  @relation("TeamCreator")
+  referralsMade          Referral[]              @relation("ReferrerUser")
+  referralReceived       Referral?               @relation("ReferredUser")
+  deviceLogs             DeviceLog[]
+  bans                   UserBan[]               @relation("BannedUser")
+  bansGiven              UserBan[]               @relation("BanAdmin")
+  adminLogs              AdminLog[]
+  roomAccessLogs         RoomAccessLog[]
+  tournamentsCreated     Tournament[]            @relation("TournamentCreator")
+  roomsCreated           MatchRoom[]             @relation("RoomAdmin")
+  tournamentFollows      TournamentFollower[]
+  disputesRaised         ResultDispute[]         @relation("DisputeUser")
+  disputesReviewed       ResultDispute[]         @relation("DisputeReviewer")
+  reportsGiven           UserReport[]            @relation("Reporter")
+  reportsReceived        UserReport[]            @relation("ReportedUser")
+  reportsReviewed        UserReport[]            @relation("ReportReviewer")
+  configsUpdated         PlatformConfig[]
+  ticketsCreated         SupportTicket[]         @relation("TicketUser")
+  ticketsAssigned        SupportTicket[]         @relation("TicketAssignee")
+  ticketMessages         TicketMessage[]
+
+  @@index([email])
+  @@index([name])
+  @@index([referCode])
+  @@index([state])
+  @@index([city])
+  @@index([accountStatus])
+  @@index([createdAt])
+  @@map("users")
 }
 
+// ─── SESSION & TOKEN ──────────────────────────────────────
+
+/// Example JSON:
+/// {
+///   "id": 1,
+///   "createdAt": "2024-01-01T00:00:00Z",
+///   "updatedAt": "2024-01-01T00:00:00Z",
+///   "expiresAt": null,
+///   "handle": "session_handle",
+///   "hashedSessionToken": null,
+///   "antiCSRFToken": null,
+///   "publicData": null,
+///   "privateData": null,
+///   "userId": 1
+/// }
 model Session {
   id                 Int       @id @default(autoincrement())
   createdAt          DateTime  @default(now())
@@ -69,8 +137,21 @@ model Session {
 
   user   User? @relation(fields: [userId], references: [id])
   userId Int?
+
+  @@map("sessions")
 }
 
+/// Example JSON:
+/// {
+///   "id": 1,
+///   "createdAt": "2024-01-01T00:00:00Z",
+///   "updatedAt": "2024-01-01T00:00:00Z",
+///   "hashedToken": "abcd1234",
+///   "type": "RESET_PASSWORD",
+///   "expiresAt": "2024-01-02T00:00:00Z",
+///   "sentTo": "user@example.com",
+///   "userId": 1
+/// }
 model Token {
   id          Int       @id @default(autoincrement())
   createdAt   DateTime  @default(now())
@@ -84,18 +165,1215 @@ model Token {
   userId Int
 
   @@unique([hashedToken, type])
+  @@map("tokens")
 }
 
-model Project {
-  id          Int      @id @default(autoincrement())
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  description String
+// ─── USER BAN ─────────────────────────────────────────────
+
+/// Tracks bans: temporary or permanent
+/// Example JSON:
+/// {
+///   "id": 1,
+///   "userId": 1,
+///   "bannedById": 2,
+///   "banType": "TEMPORARY",
+///   "banReason": "VIOLATION",
+///   "reasonDetails": "Spamming",
+///   "isActive": true,
+///   "bannedAt": "2024-01-01T00:00:00Z",
+///   "expiresAt": "2024-01-08T00:00:00Z"
+/// }
+model UserBan {
+  id            Int       @id @default(autoincrement())
+  userId        Int
+  bannedById    Int
+  banType       BanType
+  banReason     BanReason
+  reasonDetails String?
+  isActive      Boolean   @default(true)
+  bannedAt      DateTime  @default(now())
+  expiresAt     DateTime?
+  unbannedAt    DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  user     User @relation("BannedUser", fields: [userId], references: [id])
+  bannedBy User @relation("BanAdmin", fields: [bannedById], references: [id])
+
+  @@index([userId])
+  @@index([isActive])
+  @@map("user_bans")
 }
 
-// /* ─────────────────────────────────────────
-//   Enum Section
-// ───────────────────────────────────────── */
+// ─── GAME PROFILE ─────────────────────────────────────────
+
+/// Example JSON:
+/// {
+///   "id": 1,
+///   "userId": 1,
+///   "gameType": "CSGO",
+///   "gameUid": "uid123",
+///   "inGameName": "PlayerOne",
+///   "metadata": null,
+///   "status": "PENDING",
+///   "verifiedAt": null,
+///   "createdAt": "2024-01-01T00:00:00Z",
+///   "updatedAt": "2024-01-01T00:00:00Z"
+/// }
+model GameProfile {
+  id         Int               @id @default(autoincrement())
+  userId     Int
+  gameType   GameType
+  gameUid    String
+  inGameName String
+  metadata   Json?
+  status     GameProfileStatus @default(PENDING)
+  verifiedAt DateTime?
+  createdAt  DateTime          @default(now())
+  updatedAt  DateTime          @updatedAt
+
+  user                   User                    @relation(fields: [userId], references: [id])
+  tournamentParticipants TournamentParticipant[]
+
+  @@unique([userId, gameType])
+  @@index([gameType])
+  @@map("game_profiles")
+}
+
+// ─── WALLET ───────────────────────────────────────────────
+
+/// Example JSON:
+/// {
+///   "id": 1,
+///   "userId": 1,
+///   "mainBalance": 0.00,
+///   "winningBalance": 0.00,
+///   "bonusBalance": 0.00,
+///   "totalDeposited": 0.00,
+///   "totalWithdrawn": 0.00,
+///   "totalWon": 0.00,
+///   "createdAt": "2024-01-01T00:00:00Z",
+///   "updatedAt": "2024-01-01T00:00:00Z"
+/// }
+model Wallet {
+  id             Int      @id @default(autoincrement())
+  userId         Int      @unique
+  mainBalance    Decimal  @default(0) @db.Decimal(12, 2)
+  winningBalance Decimal  @default(0) @db.Decimal(12, 2)
+  bonusBalance   Decimal  @default(0) @db.Decimal(12, 2)
+  totalDeposited Decimal  @default(0) @db.Decimal(12, 2)
+  totalWithdrawn Decimal  @default(0) @db.Decimal(12, 2)
+  totalWon       Decimal  @default(0) @db.Decimal(12, 2)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  user   User           @relation(fields: [userId], references: [id])
+  ledger WalletLedger[]
+
+  @@map("wallets")
+}
+
+/// Example JSON:
+/// {
+///   "id": 1,
+///   "walletId": 1,
+///   "type": "DEPOSIT",
+///   "amount": 100.00,
+///   "beforeBalance": 0.00,
+///   "afterBalance": 100.00,
+///   "balanceBucket": "MAIN",
+///   "referenceId": "REF123",
+///   "referenceType": "ORDER",
+///   "description": "Initial deposit",
+///   "metadata": null,
+///   "createdAt": "2024-01-01T00:00:00Z"
+/// }
+model WalletLedger {
+  id            Int              @id @default(autoincrement())
+  walletId      Int
+  type          WalletLedgerType
+  amount        Decimal          @db.Decimal(12, 2)
+  beforeBalance Decimal          @db.Decimal(12, 2)
+  afterBalance  Decimal          @db.Decimal(12, 2)
+  balanceBucket BalanceBucket
+  referenceId   String?
+  referenceType String?
+  description   String?
+  metadata      Json?
+  createdAt     DateTime         @default(now())
+
+  wallet Wallet @relation(fields: [walletId], references: [id])
+
+  @@index([walletId])
+  @@index([type])
+  @@index([referenceId])
+  @@index([createdAt])
+  @@map("wallet_ledger")
+}
+
+// ─── PAYMENT ──────────────────────────────────────────────
+
+/// Example JSON:
+/// {
+///   "id": 1,
+///   "userId": 1,
+///   "orderId": "ORD123",
+///   "gatewayTxnId": null,
+///   "amount": 49.99,
+///   "currency": "INR",
+///   "status": "PENDING",
+///   "gateway": "CCAvenue",
+///   "gatewayOrderId": null,
+///   "gatewayResponse": null,
+///   "webhookVerified": false,
+///   "failureReason": null,
+///   "refundedAt": null,
+///   "refundAmount": null,
+///   "promoCodeId": null,
+///   "discountAmount": null,
+///   "createdAt": "2024-01-01T00:00:00Z",
+///   "updatedAt": "2024-01-01T00:00:00Z"
+/// }
+model Transaction {
+  id                Int           @id @default(autoincrement())
+  userId            Int
+  orderId           String        @unique
+  gatewayTxnId      String?       @unique
+  amount            Decimal       @db.Decimal(12, 2)
+  currency          String        @default("INR")
+  status            PaymentStatus @default(PENDING)
+  gateway           String        @default("CCAvenue")
+  gatewayOrderId    String?
+  gatewayResponse   Json?
+  webhookVerified   Boolean       @default(false)
+  webhookReceivedAt DateTime?
+  failureReason     String?
+  refundedAt        DateTime?
+  refundAmount      Decimal?      @db.Decimal(12, 2)
+  promoCodeId       Int?
+  discountAmount    Decimal?      @db.Decimal(12, 2)
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  user      User            @relation(fields: [userId], references: [id])
+  promoCode PromoCode?      @relation(fields: [promoCodeId], references: [id])
+  tickets   SupportTicket[]
+
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("transactions")
+}
+
+// ─── WITHDRAWAL ───────────────────────────────────────────
+
+/// Example JSON:
+/// {
+///   "id": 1,
+///   "userId": 1,
+///   "accountHolder": "John Doe",
+///   "accountNumber": "1234567890",
+///   "ifscCode": "IFSC0001",
+///   "bankName": "BankName",
+///   "upiId": null,
+///   "isDefault": true,
+///   "isVerified": true,
+///   "createdAt": "2024-01-01T00:00:00Z",
+///   "updatedAt": "2024-01-01T00:00:00Z"
+/// }
+model BankDetail {
+  id            Int      @id @default(autoincrement())
+  userId        Int
+  accountHolder String
+  accountNumber String
+  ifscCode      String
+  bankName      String
+  upiId         String?
+  isDefault     Boolean  @default(false)
+  isVerified    Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user        User         @relation(fields: [userId], references: [id])
+  withdrawals Withdrawal[]
+
+  @@index([userId])
+  @@map("bank_details")
+}
+
+/// Example JSON:
+/// {
+///   "id": 1,
+///   "userId": 1,
+///   "bankDetailId": 1,
+///   "amount": 50.00,
+///   "status": "PENDING",
+///   "upiId": null,
+///   "payoutReference": "PAYOUT123",
+///   "rejectionReason": null,
+///   "reviewedById": null,
+///   "reviewedAt": null,
+///   "paidAt": null,
+///   "batchId": "BATCH001",
+///   "createdAt": "2024-01-01T00:00:00Z",
+///   "updatedAt": "2024-01-01T00:00:00Z"
+/// }
+model Withdrawal {
+  id              Int              @id @default(autoincrement())
+  userId          Int
+  bankDetailId    Int?
+  amount          Decimal          @db.Decimal(12, 2)
+  status          WithdrawalStatus @default(PENDING)
+  upiId           String?
+  payoutReference String?
+  rejectionReason String?
+  reviewedById    Int?
+  reviewedAt      DateTime?
+  paidAt          DateTime?
+  batchId         String?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  user       User            @relation(fields: [userId], references: [id])
+  bankDetail BankDetail?     @relation(fields: [bankDetailId], references: [id])
+  reviewedBy User?           @relation("WithdrawalReviewer", fields: [reviewedById], references: [id])
+  tickets    SupportTicket[]
+
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+  @@index([batchId])
+  @@map("withdrawals")
+}
+
+// ─── TOURNAMENT ───────────────────────────────────────────
+
+/// Main tournament entity — complete match configuration
+/// NOTE: If entryFee = 0, application MUST set paymentStatus = SUCCESS on join.
+///       Do not leave free-entry participants in PENDING payment state.
+/// Example JSON:
+/// {
+///   "id": 1,
+///   "title": "Championship",
+///   "slug": "championship-2024",
+///   "description": "Annual tournament",
+///   "thumbnail": null,
+///   "bannerImage": null,
+///   "gameType": "CSGO",
+///   "matchMode": "SINGLE_ELIMINATION",
+///   "entryFee": 0.00,
+///   "prizePool": 1000.00,
+///   "perKillReward": 10.00,
+///   "maxPlayers": 100,
+///   "joinedPlayers": 0,
+///   "totalWinners": 1,
+///   "status": "UPCOMING",
+///   "isFeatured": false,
+///   "isPublic": true,
+///   "registrationStartAt": null,
+///   "registrationEndAt": null,
+///   "matchStartAt": null,
+///   "matchEndAt": null,
+///   "createdById": 1,
+///   "rules": null,
+///   "metadata": null,
+///   "createdAt": "2024-01-01T00:00:00Z",
+///   "updatedAt": "2024-01-01T00:00:00Z"
+/// }
+model Tournament {
+  id                  Int              @id @default(autoincrement())
+  title               String
+  slug                String           @unique
+  description         String?
+  thumbnail           String?
+  bannerImage         String?
+  gameType            GameType
+  matchMode           MatchMode
+  entryFee            Decimal          @default(0) @db.Decimal(10, 2)
+  prizePool           Decimal          @default(0) @db.Decimal(12, 2)
+  perKillReward       Decimal          @default(0) @db.Decimal(8, 2)
+  maxPlayers          Int
+  joinedPlayers       Int              @default(0)
+  totalWinners        Int              @default(1)
+  status              TournamentStatus @default(UPCOMING)
+  isFeatured          Boolean          @default(false)
+  isPublic            Boolean          @default(true)
+  registrationStartAt DateTime?
+  registrationEndAt   DateTime?
+  matchStartAt        DateTime?
+  matchEndAt          DateTime?
+  createdById         Int
+  rules               String?
+  metadata            Json?
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @updatedAt
+
+  createdBy    User                    @relation("TournamentCreator", fields: [createdById], references: [id])
+  participants TournamentParticipant[]
+  teams        Team[]
+  matchRoom    MatchRoom?
+  prizeDistrib PrizeDistribution[]
+  leaderboard  Leaderboard[]
+  rounds       TournamentRound[]
+  disputes     ResultDispute[]
+  followers    TournamentFollower[]
+  tickets      SupportTicket[]
+
+  @@index([gameType])
+  @@index([status])
+  @@index([matchStartAt])
+  @@index([isFeatured])
+  @@index([createdAt])
+  @@map("tournaments")
+}
+
+// ─── TOURNAMENT ROUNDS ────────────────────────────────────
+
+/// Multi-round bracket support (Quarter Final → Semi Final → Final)
+/// Example JSON:
+/// {
+///   "id": 1,
+///   "tournamentId": 1,
+///   "roundNumber": 1,
+///   "title": "Quarter Finals",
+///   "status": "UPCOMING",
+///   "startAt": null,
+///   "endAt": null,
+///   "metadata": null,
+///   "createdAt": "2024-01-01T00:00:00Z",
+///   "updatedAt": "2024-01-01T00:00:00Z"
+/// }
+model TournamentRound {
+  id           Int         @id @default(autoincrement())
+  tournamentId Int
+  roundNumber  Int
+  title        String
+  status       RoundStatus @default(UPCOMING)
+  startAt      DateTime?
+  endAt        DateTime?
+  metadata     Json?
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  tournament Tournament   @relation(fields: [tournamentId], references: [id])
+  matches    RoundMatch[]
+
+  @@unique([tournamentId, roundNumber])
+  @@index([tournamentId])
+  @@index([status])
+  @@map("tournament_rounds")
+}
+
+/// Individual match within a round
+/// Example JSON:
+/// {
+///   "id": 1,
+///   "roundId": 1,
+///   "matchNumber": 1,
+///   "roomId": null,
+///   "roomPass": null,
+///   "status": "UPCOMING",
+///   "startAt": null,
+///   "metadata": null,
+///   "createdAt": "2024-01-01T00:00:00Z",
+///   "updatedAt": "2024-01-01T00:00:00Z"
+/// }
+model RoundMatch {
+  id          Int         @id @default(autoincrement())
+  roundId     Int
+  matchNumber Int
+  roomId      String?
+  roomPass    String?
+  status      RoundStatus @default(UPCOMING)
+  startAt     DateTime?
+  metadata    Json?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  round TournamentRound @relation(fields: [roundId], references: [id])
+
+  @@unique([roundId, matchNumber])
+  @@index([roundId])
+  @@map("round_matches")
+}
+
+// ─── MATCH ROOM ───────────────────────────────────────────
+
+/// Secure room credentials — separate from tournament for security
+/// Example JSON:
+/// {
+///   "id": 1,
+///   "tournamentId": 1,
+///   "roomId": "room123",
+///   "roomPassword": "secret",
+///   "roomIdEnc": null,
+///   "roomPassEnc": null,
+///   "isPublished": false,
+///   "scheduledPublishAt": null,
+///   "publishedAt": null,
+///   "createdById": 1,
+///   "broadcastSent": false,
+///   "createdAt": "2024-01-01T00:00:00Z",
+///   "updatedAt": "2024-01-01T00:00:00Z"
+/// }
+model MatchRoom {
+  id                 Int       @id @default(autoincrement())
+  tournamentId       Int       @unique
+  roomId             String
+  roomPassword       String
+  roomIdEnc          String?
+  roomPassEnc        String?
+  isPublished        Boolean   @default(false)
+  scheduledPublishAt DateTime?
+  publishedAt        DateTime?
+  createdById        Int
+  broadcastSent      Boolean   @default(false)
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  tournament Tournament      @relation(fields: [tournamentId], references: [id])
+  createdBy  User            @relation("RoomAdmin", fields: [createdById], references: [id])
+  accessLogs RoomAccessLog[]
+
+  @@index([tournamentId])
+  @@index([isPublished])
+  @@index([scheduledPublishAt])
+  @@map("match_rooms")
+}
+
+/// Every room credential access attempt is logged
+/// Example JSON:
+/// {
+///   "id": 1,
+///   "matchRoomId": 1,
+///   "userId": 1,
+///   "accessGranted": true,
+///   "denyReason": null,
+///   "accessedAt": "2024-01-01T00:00:00Z"
+/// }
+model RoomAccessLog {
+  id            Int      @id @default(autoincrement())
+  matchRoomId   Int
+  userId        Int
+  accessGranted Boolean
+  denyReason    String?
+  accessedAt    DateTime @default(now())
+
+  matchRoom MatchRoom @relation(fields: [matchRoomId], references: [id])
+  user      User      @relation(fields: [userId], references: [id])
+
+  @@index([matchRoomId])
+  @@index([userId])
+  @@index([accessGranted])
+  @@index([accessedAt])
+  @@map("room_access_logs")
+}
+
+// ─── TOURNAMENT PARTICIPANT ───────────────────────────────
+
+/// Tournament participant — payment + eligibility + room access tracking
+/// Example JSON:
+/// {
+///   "id": 1,
+///   "tournamentId": 1,
+///   "userId": 1,
+///   "gameProfileId": 1,
+///   "teamId": null,
+///   "status": "JOINED",
+///   "paymentStatus": "PENDING",
+///   "isRoomEligible": false,
+///   "roomViewedAt": null,
+///   "slot": null,
+///   "joinedAt": "2024-01-01T00:00:00Z",
+///   "leftAt": null,
+///   "createdAt": "2024-01-01T00:00:00Z",
+///   "updatedAt": "2024-01-01T00:00:00Z"
+/// }
+model TournamentParticipant {
+  id             Int               @id @default(autoincrement())
+  tournamentId   Int
+  userId         Int
+  gameProfileId  Int
+  teamId         Int?
+  status         ParticipantStatus @default(JOINED)
+  /// NOTE: Must be set to SUCCESS immediately at join time if entryFee = 0
+  paymentStatus  PaymentStatus     @default(PENDING)
+  isRoomEligible Boolean           @default(false)
+  roomViewedAt   DateTime?
+  slot           Int?
+  joinedAt       DateTime          @default(now())
+  leftAt         DateTime?
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+
+  tournament  Tournament   @relation(fields: [tournamentId], references: [id])
+  user        User         @relation(fields: [userId], references: [id])
+  gameProfile GameProfile  @relation(fields: [gameProfileId], references: [id])
+  team        Team?        @relation(fields: [teamId], references: [id])
+  leaderboard Leaderboard?
+
+  @@unique([tournamentId, userId])
+  @@index([tournamentId])
+  @@index([userId])
+  @@index([paymentStatus])
+  @@index([isRoomEligible])
+  @@map("tournament_participants")
+}
+
+// ─── LEADERBOARD & PRIZES ─────────────────────────────────
+
+/// Example JSON:
+/// {
+///   "id": 1,
+///   "tournamentId": 1,
+///   "userId": 1,
+///   "participantId": 1,
+///   "kills": 10,
+///   "placement": 1,
+///   "positionPoints": 100.00,
+///   "killPoints": 50.00,
+///   "totalPoints": 150.00,
+///   "tournamentRank": 1,
+///   "winningAmount": 500.00,
+///   "isWinner": true,
+///   "createdAt": "2024-01-01T00:00:00Z",
+///   "updatedAt": "2024-01-01T00:00:00Z"
+/// }
+model Leaderboard {
+  id             Int      @id @default(autoincrement())
+  tournamentId   Int
+  userId         Int
+  participantId  Int      @unique
+  kills          Int      @default(0)
+  placement      Int?
+  positionPoints Decimal  @default(0) @db.Decimal(8, 2)
+  killPoints     Decimal  @default(0) @db.Decimal(8, 2)
+  totalPoints    Decimal  @default(0) @db.Decimal(8, 2)
+  tournamentRank Int?
+  winningAmount  Decimal  @default(0) @db.Decimal(12, 2)
+  isWinner       Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  tournament  Tournament            @relation(fields: [tournamentId], references: [id])
+  user        User                  @relation(fields: [userId], references: [id])
+  participant TournamentParticipant @relation(fields: [participantId], references: [id])
+
+  @@index([tournamentId, tournamentRank])
+  @@index([tournamentId, totalPoints])
+  @@index([userId])
+  @@index([isWinner])
+  @@map("leaderboard")
+}
+
+/// Example JSON:
+/// {
+///   "id": 1,
+///   "tournamentId": 1,
+///   "rank": 1,
+///   "prizeAmount": 1000.00,
+///   "prizePercent": 50.00,
+///   "description": "First prize",
+///   "createdAt": "2024-01-01T00:00:00Z"
+/// }
+model PrizeDistribution {
+  id           Int      @id @default(autoincrement())
+  tournamentId Int
+  rank         Int
+  prizeAmount  Decimal  @db.Decimal(12, 2)
+  prizePercent Decimal? @db.Decimal(5, 2)
+  description  String?
+  createdAt    DateTime @default(now())
+
+  tournament Tournament @relation(fields: [tournamentId], references: [id])
+
+  @@unique([tournamentId, rank])
+  @@index([tournamentId])
+  @@map("prize_distributions")
+}
+
+// ─── RESULT DISPUTE ───────────────────────────────────────
+
+/// Users can challenge posted leaderboard results with evidence
+/// Example JSON:
+/// {
+///   "id": 1,
+///   "tournamentId": 1,
+///   "userId": 1,
+///   "claimedKills": 15,
+///   "claimedRank": 2,
+///   "details": "Dispute details",
+///   "evidenceUrls": ["https://example.com/evidence1.png"],
+///   "status": "PENDING",
+///   "resolvedById": null,
+///   "resolutionNote": null,
+///   "resolvedAt": null,
+///   "createdAt": "2024-01-01T00:00:00Z",
+///   "updatedAt": "2024-01-01T00:00:00Z"
+/// }
+model ResultDispute {
+  id             Int           @id @default(autoincrement())
+  tournamentId   Int
+  userId         Int
+  claimedKills   Int?
+  claimedRank    Int?
+  details        String?
+  evidenceUrls   String[]
+  status         DisputeStatus @default(PENDING)
+  resolvedById   Int?
+  resolutionNote String?
+  resolvedAt     DateTime?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  tournament Tournament @relation(fields: [tournamentId], references: [id])
+  user       User       @relation("DisputeUser", fields: [userId], references: [id])
+  resolvedBy User?      @relation("DisputeReviewer", fields: [resolvedById], references: [id])
+
+  @@index([tournamentId])
+  @@index([userId])
+  @@index([status])
+  @@map("result_disputes")
+}
+
+// ─── TEAM SYSTEM ──────────────────────────────────────────
+
+/// Example JSON:
+/// {
+///   "id": 1,
+///   "name": "Team Alpha",
+///   "slug": "team-alpha",
+///   "logo": null,
+///   "description": "Professional esports team",
+///   "joinCode": "ABC123",
+///   "teamType": "SINGLE_ELIMINATION",
+///   "tournamentId": null,
+///   "createdById": 1,
+///   "isActive": true,
+///   "createdAt": "2024-01-01T00:00:00Z",
+///   "updatedAt": "2024-01-01T00:00:00Z"
+/// }
+model Team {
+  id           Int       @id @default(autoincrement())
+  name         String
+  slug         String    @unique
+  logo         String?
+  description  String?
+  joinCode     String    @unique
+  teamType     MatchMode
+  tournamentId Int?
+  createdById  Int
+  isActive     Boolean   @default(true)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  createdBy    User                    @relation("TeamCreator", fields: [createdById], references: [id])
+  tournament   Tournament?             @relation(fields: [tournamentId], references: [id])
+  members      TeamMember[]
+  participants TournamentParticipant[]
+
+  @@map("teams")
+}
+
+/// Example JSON:
+/// {
+///   "id": 1,
+///   "teamId": 1,
+///   "userId": 2,
+///   "role": "MEMBER",
+///   "joinedAt": "2024-01-01T00:00:00Z"
+/// }
+model TeamMember {
+  id       Int      @id @default(autoincrement())
+  teamId   Int
+  userId   Int
+  role     TeamRole @default(MEMBER)
+  joinedAt DateTime @default(now())
+
+  team Team @relation(fields: [teamId], references: [id])
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([teamId, userId])
+  @@index([userId])
+  @@map("team_members")
+}
+
+// ─── REFERRAL SYSTEM ──────────────────────────────────────
+
+/// Referral tracking — reward issued after deposit + paid match
+/// Example JSON:
+/// {
+///   "id": 1,
+///   "referrerId": 1,
+///   "referredUserId": 2,
+///   "depositStatus": false,
+///   "depositedAt": null,
+///   "paidMatchStatus": false,
+///   "paidMatchAt": null,
+///   "rewardStatus": "PENDING",
+///   "rewardedAt": null,
+///   "isSuspicious": false,
+///   "createdAt": "2024-01-01T00:00:00Z",
+///   "updatedAt": "2024-01-01T00:00:00Z"
+/// }
+model Referral {
+  id              Int                  @id @default(autoincrement())
+  referrerId      Int
+  referredUserId  Int                  @unique
+  depositStatus   Boolean              @default(false)
+  depositedAt     DateTime?
+  paidMatchStatus Boolean              @default(false)
+  paidMatchAt     DateTime?
+  rewardStatus    ReferralRewardStatus @default(PENDING)
+  rewardedAt      DateTime?
+  isSuspicious    Boolean              @default(false)
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+
+  referrer     User @relation("ReferrerUser", fields: [referrerId], references: [id])
+  referredUser User @relation("ReferredUser", fields: [referredUserId], references: [id])
+
+  @@index([referrerId])
+  @@index([rewardStatus])
+  @@map("referrals")
+}
+
+// ─── PROMO / COUPON SYSTEM ────────────────────────────────
+
+/// Promotional codes for deposit discounts or bonus credits
+/// Example JSON:
+/// {
+///   "id": 1,
+///   "code": "PROMO2024",
+///   "discountType": "PERCENTAGE",
+///   "value": 10.00,
+///   "minDeposit": null,
+///   "maxDiscount": null,
+///   "maxUses": null,
+///   "usedCount": 0,
+///   "validFrom": "2024-01-01T00:00:00Z",
+///   "validUntil": null,
+///   "isActive": true,
+///   "createdAt": "2024-01-01T00:00:00Z",
+///   "updatedAt": "2024-01-01T00:00:00Z"
+/// }
+model PromoCode {
+  id           Int          @id @default(autoincrement())
+  code         String       @unique
+  discountType DiscountType
+  value        Decimal      @db.Decimal(10, 2)
+  minDeposit   Decimal?     @db.Decimal(10, 2)
+  maxDiscount  Decimal?     @db.Decimal(10, 2)
+  maxUses      Int?
+  usedCount    Int          @default(0)
+  validFrom    DateTime
+  validUntil   DateTime?
+  isActive     Boolean      @default(true)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  usages       PromoUsage[]
+  transactions Transaction[]
+
+  @@index([code])
+  @@index([isActive])
+  @@map("promo_codes")
+}
+
+/// Tracks each promo usage per user — prevents double dipping
+/// Example JSON:
+/// {
+///   "id": 1,
+///   "promoId": 1,
+///   "userId": 2,
+///   "orderId": "ORD123",
+///   "usedAt": "2024-01-01T00:00:00Z"
+/// }
+model PromoUsage {
+  id      Int      @id @default(autoincrement())
+  promoId Int
+  userId  Int
+  orderId String
+  usedAt  DateTime @default(now())
+
+  promo PromoCode @relation(fields: [promoId], references: [id])
+
+  @@unique([promoId, userId])
+  @@index([promoId])
+  @@index([userId])
+  @@map("promo_usages")
+}
+
+// ─── TOURNAMENT FOLLOWER ──────────────────────────────────
+
+/// Users who follow/spectate a tournament without participating
+/// Example JSON:
+/// {
+///   "id": 1,
+///   "tournamentId": 1,
+///   "userId": 3,
+///   "followedAt": "2024-01-01T00:00:00Z"
+/// }
+model TournamentFollower {
+  id           Int      @id @default(autoincrement())
+  tournamentId Int
+  userId       Int
+  followedAt   DateTime @default(now())
+
+  tournament Tournament @relation(fields: [tournamentId], references: [id])
+  user       User       @relation(fields: [userId], references: [id])
+
+  @@unique([tournamentId, userId])
+  @@index([tournamentId])
+  @@index([userId])
+  @@map("tournament_followers")
+}
+
+// ─── USER REPORT SYSTEM ───────────────────────────────────
+
+/// In-game abuse / cheating reports between users
+/// Example JSON:
+/// {
+///   "id": 1,
+///   "reporterId": 1,
+///   "reportedId": 2,
+///   "tournamentId": null,
+///   "reason": "CHEATING",
+///   "details": "User used aimbot",
+///   "evidenceUrls": ["https://example.com/evidence.png"],
+///   "status": "PENDING",
+///   "reviewedById": null,
+///   "actionTaken": null,
+///   "reviewedAt": null,
+///   "createdAt": "2024-01-01T00:00:00Z",
+///   "updatedAt": "2024-01-01T00:00:00Z"
+/// }
+model UserReport {
+  id           Int          @id @default(autoincrement())
+  reporterId   Int
+  reportedId   Int
+  tournamentId Int?
+  reason       ReportReason
+  details      String?
+  evidenceUrls String[]
+  status       ReportStatus @default(PENDING)
+  reviewedById Int?
+  actionTaken  String?
+  reviewedAt   DateTime?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  reporter   User  @relation("Reporter", fields: [reporterId], references: [id])
+  reported   User  @relation("ReportedUser", fields: [reportedId], references: [id])
+  reviewedBy User? @relation("ReportReviewer", fields: [reviewedById], references: [id])
+
+  @@index([reportedId])
+  @@index([reporterId])
+  @@index([status])
+  @@index([tournamentId])
+  @@map("user_reports")
+}
+
+// ─── PLATFORM CONFIG ──────────────────────────────────────
+
+/// Runtime feature flags and platform settings — admin-controlled
+/// Example JSON:
+/// {
+///   "id": 1,
+///   "key": "featureToggle",
+///   "value": "true",
+///   "dataType": "STRING",
+///   "description": "Enables new feature",
+///   "updatedById": 1,
+///   "createdAt": "2024-01-01T00:00:00Z",
+///   "updatedAt": "2024-01-01T00:00:00Z"
+/// }
+model PlatformConfig {
+  id          Int            @id @default(autoincrement())
+  key         String         @unique
+  value       String
+  dataType    ConfigDataType @default(STRING)
+  description String?
+  updatedById Int
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  updatedBy User @relation(fields: [updatedById], references: [id])
+
+  @@index([key])
+  @@map("platform_configs")
+}
+
+// ─── NOTIFICATIONS ────────────────────────────────────────
+
+/// Example JSON:
+/// {
+///   "id": 1,
+///   "userId": 1,
+///   "type": "ALERT",
+///   "title": "Welcome",
+///   "message": "Welcome to the platform",
+///   "isRead": false,
+///   "readAt": null,
+///   "metadata": null,
+///   "deepLink": null,
+///   "createdAt": "2024-01-01T00:00:00Z"
+/// }
+model Notification {
+  id        Int              @id @default(autoincrement())
+  userId    Int
+  type      NotificationType
+  title     String
+  message   String
+  isRead    Boolean          @default(false)
+  readAt    DateTime?
+  metadata  Json?
+  deepLink  String?
+  createdAt DateTime         @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId, isRead])
+  @@index([createdAt])
+  @@map("notifications")
+}
+
+/// Example JSON:
+/// {
+///   "id": 1,
+///   "userId": 1,
+///   "pushEnabled": true,
+///   "emailEnabled": true,
+///   "smsEnabled": false,
+///   "tournamentAlerts": true,
+///   "walletAlerts": true,
+///   "promoAlerts": false,
+///   "ticketAlerts": true,
+///   "disputeAlerts": true
+/// }
+model NotificationPreference {
+  id               Int     @id @default(autoincrement())
+  userId           Int     @unique
+  pushEnabled      Boolean @default(true)
+  emailEnabled     Boolean @default(true)
+  smsEnabled       Boolean @default(false)
+  tournamentAlerts Boolean @default(true)
+  walletAlerts     Boolean @default(true)
+  promoAlerts      Boolean @default(false)
+  ticketAlerts     Boolean @default(true)
+  disputeAlerts    Boolean @default(true)
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("notification_preferences")
+}
+
+// ─── FRAUD PREVENTION ─────────────────────────────────────
+
+/// Example JSON:
+/// {
+///   "id": 1,
+///   "userId": 1,
+///   "isSuspicious": false,
+///   "suspicionReason": null,
+///   "loggedAt": "2024-01-01T00:00:00Z"
+/// }
+model DeviceLog {
+  id              Int      @id @default(autoincrement())
+  userId          Int
+  isSuspicious    Boolean  @default(false)
+  suspicionReason String?
+  loggedAt        DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([isSuspicious])
+  @@map("device_logs")
+}
+
+// ─── ADMIN AUDIT ──────────────────────────────────────────
+
+/// Example JSON:
+/// {
+///   "id": 1,
+///   "adminId": 1,
+///   "action": "CREATE_USER",
+///   "targetType": "User",
+///   "targetId": 2,
+///   "metadata": null,
+///   "createdAt": "2024-01-01T00:00:00Z"
+/// }
+model AdminLog {
+  id         Int      @id @default(autoincrement())
+  adminId    Int
+  action     String
+  targetType String?
+  targetId   Int?
+  metadata   Json?
+  createdAt  DateTime @default(now())
+
+  admin User @relation(fields: [adminId], references: [id])
+
+  @@index([adminId])
+  @@index([action])
+  @@index([targetType, targetId])
+  @@index([createdAt])
+  @@map("admin_logs")
+}
+
+// ─── SUPPORT TICKET SYSTEM ────────────────────────────────
+
+/// Main support ticket raised by a user
+/// Example JSON:
+/// {
+///   "id": 1,
+///   "ticketNumber": "TICK123",
+///   "userId": 1,
+///   "assignedToId": null,
+///   "category": "GENERAL",
+///   "priority": "MEDIUM",
+///   "status": "OPEN",
+///   "subject": "Support needed",
+///   "tournamentId": null,
+///   "transactionId": null,
+///   "withdrawalId": null,
+///   "resolvedAt": null,
+///   "closedAt": null,
+///   "firstResponseAt": null,
+///   "internalNotes": null,
+///   "metadata": null,
+///   "createdAt": "2024-01-01T00:00:00Z",
+///   "updatedAt": "2024-01-01T00:00:00Z"
+/// }
+model SupportTicket {
+  id              Int            @id @default(autoincrement())
+  ticketNumber    String         @unique
+  userId          Int
+  assignedToId    Int?
+  category        TicketCategory
+  priority        TicketPriority @default(MEDIUM)
+  status          TicketStatus   @default(OPEN)
+  subject         String
+  tournamentId    Int?
+  transactionId   Int?
+  withdrawalId    Int?
+  resolvedAt      DateTime?
+  closedAt        DateTime?
+  firstResponseAt DateTime?
+  internalNotes   String?
+  metadata        Json?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  user        User               @relation("TicketUser", fields: [userId], references: [id])
+  assignedTo  User?              @relation("TicketAssignee", fields: [assignedToId], references: [id])
+  tournament  Tournament?        @relation(fields: [tournamentId], references: [id])
+  transaction Transaction?       @relation(fields: [transactionId], references: [id])
+  withdrawal  Withdrawal?        @relation(fields: [withdrawalId], references: [id])
+  messages    TicketMessage[]
+  attachments TicketAttachment[]
+  statusLogs  TicketStatusLog[]
+
+  @@index([userId])
+  @@index([status])
+  @@index([priority])
+  @@index([category])
+  @@index([assignedToId])
+  @@index([createdAt])
+  @@index([ticketNumber])
+  @@map("support_tickets")
+}
+
+/// Individual messages within a ticket thread (user + support both post here)
+/// Example JSON:
+/// {
+///   "id": 1,
+///   "ticketId": 1,
+///   "senderId": 1,
+///   "senderType": "USER",
+///   "message": "I need help",
+///   "isInternal": false,
+///   "createdAt": "2024-01-01T00:00:00Z",
+///   "updatedAt": "2024-01-01T00:00:00Z"
+/// }
+model TicketMessage {
+  id         Int                 @id @default(autoincrement())
+  ticketId   Int
+  senderId   Int
+  senderType TicketMessageSender
+  message    String
+  isInternal Boolean             @default(false)
+  createdAt  DateTime            @default(now())
+  updatedAt  DateTime            @updatedAt
+
+  ticket      SupportTicket      @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  sender      User               @relation(fields: [senderId], references: [id])
+  attachments TicketAttachment[]
+
+  @@index([ticketId])
+  @@index([senderId])
+  @@index([createdAt])
+  @@map("ticket_messages")
+}
+
+/// File attachments on tickets or messages
+/// Example JSON:
+/// {
+///   "id": 1,
+///   "ticketId": 1,
+///   "fileName": "screenshot.png",
+///   "fileUrl": "https://example.com/screenshot.png",
+///   "fileSize": 102400,
+///   "mimeType": "image/png",
+///   "createdAt": "2024-01-01T00:00:00Z"
+/// }
+model TicketAttachment {
+  id        Int      @id @default(autoincrement())
+  ticketId  Int
+  messageId Int?
+  fileName  String
+  fileUrl   String
+  fileSize  Int
+  mimeType  String
+  createdAt DateTime @default(now())
+
+  ticket  SupportTicket  @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  message TicketMessage? @relation(fields: [messageId], references: [id])
+
+  @@index([ticketId])
+  @@index([messageId])
+  @@map("ticket_attachments")
+}
+
+/// Immutable log of every status transition — for audit and SLA tracking
+/// Example JSON:
+/// {
+///   "id": 1,
+///   "ticketId": 1,
+///   "fromStatus": "OPEN",
+///   "toStatus": "CLOSED",
+///   "changedById": 2,
+///   "reason": "Resolved",
+///   "createdAt": "2024-01-02T00:00:00Z"
+/// }
+model TicketStatusLog {
+  id          Int           @id @default(autoincrement())
+  ticketId    Int
+  fromStatus  TicketStatus?
+  toStatus    TicketStatus
+  changedById Int
+  reason      String?
+  createdAt   DateTime      @default(now())
+
+  ticket SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+
+  @@index([ticketId])
+  @@index([createdAt])
+  @@map("ticket_status_logs")
+}
+
+// ─── ENUMS ────────────────────────────────────────────────
 
 enum TokenType {
   RESET_PASSWORD
